@@ -14,12 +14,15 @@
   \end{subfigure}%
 
   \caption{\textbf{Goodput and Latency Results for Scenario B}
-  Figure~\ref{fig:30-goodput} shows that there is still a fair amount of goodput loss in this scenario
-  but the amount loss is much less than the amount in Scenario A. This is due to because the tasks
-  that are killed have only made 30 seconds of progress whereas in Scenarios A the killed tasks have
-  made 150 seconds of progress. Note that in this scenario, the second framework will experience
-  a latency 2 orders of magnitude larger due to the fact, without resource revocation, they would have
-  to wait even longer before they are given a slot in the system.
+  In Figure~\ref{fig:30-goodput}, black lines correspond to the system's goodput, blue lines
+  correspond to Framework 1's goodput, and red lines correspond to Framework 2's goodput. For the system
+  goodput result, the $+$ lines correspond to the case without resource revocation and the dashed line
+  corresponds to the cae with resource revocation. For the frameworks, the $+$ lines correspond to the
+  case without resource revocation while the solid lines correspond to the case with resource
+  revocation.
+  Figure~\ref{fig:30-latency} plots Framework B's task latency when it is running in isolation
+  (the black line), when it is running without resource revocation (the blue line), and when it is
+  running with resource revocation (the red line).
   }
   \label{fig:30-goodput-latency}
 \end{figure*}

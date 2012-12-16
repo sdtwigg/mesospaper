@@ -14,11 +14,15 @@
   \end{subfigure}%
 
   \caption{\textbf{Goodput and Latency Results for Scenario A}
-  Figure~\ref{fig:150-goodput} shows that
-  there is significant goodput loss at the beginning due to the fact that tasks that have been running
-  for 150 seconds are killed. However, this drastically improves the latency of the second figure as
-  seen in Figure~\ref{fig:150-latency}. Without resource revocation, the second framework would have
-  latency numbers an order of magnitude larger than in the control. With revocation, the second
-  framework's latency numbers matches closely with the control's.}
+  In Figure~\ref{fig:150-goodput}, black lines correspond to the system's goodput, blue lines
+  correspond to Framework 1's goodput, and red lines correspond to Framework 2's goodput. For the system
+  goodput result, the $+$ lines correspond to the case without resource revocation and the dashed line
+  corresponds to the cae with resource revocation. For the frameworks, the $+$ lines correspond to the
+  case without resource revocation while the solid lines correspond to the case with resource
+  revocation.
+  Figure~\ref{fig:150-latency} plots Framework B's task latency when it is running in isolation
+  (the black line), when it is running without resource revocation (the blue line), and when it is
+  running with resource revocation (the red line).
+  }
   \label{fig:150-goodput-latency}
 \end{figure*}
