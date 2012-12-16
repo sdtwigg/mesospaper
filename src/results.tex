@@ -1,5 +1,6 @@
 \section{Results}
 \label{sec:results}
+\input{control}
 \input{150-goodput-latency}
 \input{30-goodput-latency}
 \subsection{Experimental Setup}
@@ -15,5 +16,55 @@ are still highly beneficial.
 Something something offer revocation.
 
 \subsection{Resource Revocation}
-We examined two extreme corners of operation.
+For this experiment, we designed two frameworks. The first framework, Framework A, models a greedy
+data analysis framework that wants as much compute resources as possible. It launches long lived tasks
+that lasts 3 minutes. If allowed to run in isolation, it will easily take up a large share of the 
+cluster. In our experimental setup, we allowed framework A to take up all 8 slots. Framework B, on the
+other hand, models reactive realtime jobs. Every 15 seconds it generates and launches 2 short-lived 
+tasks spanning 30 seconds each. If allowed to run in isolation, this framework will only use up two 
+slots in the cluster. 
 
+Before diving into our experiments, we first allow Frameworks A and B to run in the cluster isolation to
+verify that they behave as intended and to have a good reference point for our experiments. The solid
+black lines in Figure~\ref{fig:greedy-goodput} and Figure~\ref{fig:model-goodput} correspond to 
+achievable goodput results when the frameworks are allowed to run by themselves. As expected, 
+Framework A will eat up all 8 slots while Framework B will never take up more than 2 slots even if 
+Mesos offers it more resources. The solid black lines in Figure~\ref{fig:150-latency} and
+Figure~\ref{fig:30-latency} corresponds to the achievable latency when Framework B is allowed to run by
+itself in the cluster.
+
+We closely examined two extreme corners of operation. Figure~\ref{fig:150-goodput-latency} documents our
+results for Scenario A. In this scenario, we have Framework A enter the system first. Since it is the 
+only framework in the system, it quickly takes up all 8 slots in the system. We then have framework B
+enter the system 150 seconds later. We first examine how our system behaves without resource revocation.
+We'll then show how resource revocation improves the performance of our system. Recall that Framework's
+A task each last 3 minutes. This means that without resource revocation, framework B would only have to
+wait 30 seconds for Framework A's task to finish at which point Mesos can then make an offer to 
+Framework B. Furthermore, since Framework B generates tasks every 15 seconds, regardless of whether or
+not Mesos is able to make it a resource offer, by the time Mesos is able to make it an offer, 
+framework B will have a pile up of tasks in its task queue. It will thus grab a larger share of the 
+system. This behavior can be seen by the red $+$ line in Figure~\ref{fig:150-goodput}. Notice that at 
+180s, this line will jump up to 3. It will then quickly drop to 1. This is because Framework B only 
+requires 2 slots to keep its task queue empty and having more slots means that it will complete tasks 
+faster than it can generate tasks. It will therefore relinquish two of its three slots to framework A.
+This will cause the tasks in its task queue to pile up again. So then at time 360, when framework A's
+second set of tasks completes, Framework B will take up four slots in the system. This behavior can
+also be seen by Frmaework B's latency (the solid blue line in Figure~\ref{fig:150-latency}). Notice how
+initially Framework B's tasks have latency an order of magnitude larger than the control case (the
+solid black line). However, this latency will quickly drop (because Framework B has a much larger share
+of the system than it needs) before spiking up again (because it has a smaller share of the system
+than it needs).
+
+Now we'll examine what happens when we allow Mesos to revoke resources. The solid blue and red lines
+indicate the behaviors of Framework A and Framework B with revocation respectively. First, notice that
+framework B immediately starts at time 150, when it enters the system whereas before it was not able
+to start until time 180, as indicated by the red $+$ line. Furthermore, Framework B's goodput remains
+steady throughout its run, fully utilizing its two slots in the system. And finally, Framework B's tasks
+experiences latency that matches closely with the control case (compare the red line to the black line
+in Figure~\ref{fig:150-latency}). Although resource revocation improves Framework B's performance, it 
+also introduces some drawbacks into the system that were not previously there. Compare the system's 
+goodput with revocation (the solid black line in Figure~\ref{fig:150-goodput}) to the system's goodput
+without resource revocation (the dashed line in Figure~\ref{fig:150-goodput}). Notice that there is a
+drop in goodput from time 0 to time 150. This is due to the fact that two of Framework A's tasks are 
+killed at time 150. Thus any work that those two tasks made from time 0 to time 150 is lost. However,
+this is the only time that the system loses goodput.
