@@ -23,7 +23,12 @@ is launched on a slaved at time 102 seconds, and then completes at time 130 seco
 30 seconds (130 seconds - 100 seconds). 
 
 \subsection{Offer Revocation}
-Something something offer revocation.
+The goal behind offer revocation is to minimize the impact that malicious or poorly coded frameworks
+have on the system. In our experiments, if all the frameworks in the cluster are well behaved, then
+offer revocation has no effect on the cluster at all, which is the desired behavior. We also introduced
+frameworks that take a lengthy amount of time to make a decision on an offer as well as frameworks that
+never respond to offers. With offer revocation, well behaved frameworks were able to make forward
+progress.
 
 \subsection{Resource Revocation}
 For this experiment, we designed two frameworks. The first framework, Framework 1, models a greedy
