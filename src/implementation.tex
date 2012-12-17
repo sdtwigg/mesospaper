@@ -1,0 +1,61 @@
+\section{Implementation}
+In this paper, we contribute two types of revocation mechanisms to mesos: offer revocation and resource
+revocation. The idea behind offer revocation is that Mesos will give frameworks adequate time to respond
+to an offer it has made. If a framework fails to respond in time, Mesos will forcibly take back the
+resources it had to tie down to make the offer. With resource revocation, Mesos periodically searches
+for frameworks that have gone over their guaranteed share. Then, if there are frameworks under their
+guaranteed share, Mesos will forcibly take the over allocated resources from the frameworks that are
+over their guaranteed share and give the resources to the frameworks under their guaranteed share. We
+go into a detailed discussion of our modifications to Mesos below.
+
+\subsection{Offer Revocation}
+Since offer revocation does not involve any acknowledgements from a framework, we did not have to change
+the communication interface between Mesos and a framework. On the Mesos Master side, an offer revocation
+looks very much like a situation in which a framework has rejected offer so we were able to resuse a
+lot of the mechanisms that were already in place on Mesos Master. The only major addition we made to
+Mesos Master is to have Mesos Master start a separate timer task whenever it makes an offer. When the
+timer goes off, it will place a offer revoked message onto Mesos Master's event queue. When the event
+handler processes the message, it will put the resources in the offer back on the list of allocatable
+offers. Note that there is zero possiblity for a race condition in which the offer revocation timer goes
+off at the same time that a framework responded to an offer. One of those messages, either the offer
+revocation message or the offer response message, will be enqueued first. If the event handler sees 
+the offer response message first, then the offer revocation message is ignored. If it sees the offer
+revocation message first, then the offer response message is ignored and the framework is notified. On
+the framework side, the framework will see that its tasks were never launched onto a Mesos Slave. It
+is up to the framework to do the appropriate thing (e.g. add the task back to its task queue).
+
+We did not settle on a offer timeout time since we were not sure how long it would take a well behaved
+framework to respond to an offer. Instead, we start the timeout time at some small time. If a framework
+fails to respond to resource offer before the timer goes off, we gradually increase the timeout time
+up to a maximum. 
+
+\subsection{Resource Revocation}
+Resource revocation is much more complicted. At every heartbeat, stock Mesos will perform DRF to
+determine which framework to make a resource offer to. We modified Mesos to also check the resource
+utlizations of all the frameworks at every heartbeat. Mesos will calculate the amount of resources that
+are allocatable ($R_a$), the amount of resources by which each framework is over its guaranteed
+share ($R_o$), and the amount of resources by which each framework is under its guaranteed share 
+($R_u$). Then if 
+\begin{align*}
+  R_u > R_a
+\end{align*}
+Mesos will begin to revoke from the all the frameworks that have gone over their guaranteed share until
+the total amount of resources revoked ($R_r$) is such that
+\begin{align*}
+  R_u = R_a + R_r.
+\end{align*}
+Keep in mind three things. First, Mesos will only revoke resources from frameworks to bring them down to
+their guaranteed share and never under their guaranteed share. Second, Mesos will allow a framework to 
+be over its guaranteed share as long as all the other frameworks in their system have met their
+guaranteed share. Finally, we assume that it is possible to revoke resources to bring everyone to at
+least meet their guarantee. If this is impossible to do, then that means the system is oversubscribed,
+a problem that resource revocation is not meant to solve.
+
+Once Mesos has determined the amount of resources to revoke from each framework, it will then determine
+which slave these frameworks are currently running tasks on. It will then figure out how many tasks to
+kill on each slave such that enough resources are freed. To make this a fast process, we simply have
+Mesos kill the most recently launched tasks. Once it has figured out which tasks to kill, Mesos sends
+kill task messages to the slaves. Upon receiving these messages, the slaves will immediately kill the
+corresponding task and notify Mesos Master and corresponding framework that a task has been killed. On
+receipt of this message, Mesos Master will add the resources that the task was using back to the list
+of allocatable resources. 
