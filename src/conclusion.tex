@@ -15,3 +15,11 @@ revocation was also able to maintain better resource stability and consistencies
 frameworks. Greedy frameworks were prevented from locking out undersubscribed frameworks.
 Undersubscribed frameworks are able to get a resonable slice of the system without fear of being edged
 out the system by greedy frameworks.
+
+In this paper we chose the simplest resource revocation scheme. To continue this project, we would
+examine different revocation policies. One possible idea would be to change the frequency of
+revocations (currently we revoke at every Mesos heartbeat). Reducing the frequency would obviously
+increase task latency but could also possibly reduce goodput loss. Another possible extension would be
+to improve our revocation algorithm. Currently, we are not selective about who we revoke from and how
+much we revoke from each framework. A smarter revocation algorithm could possibly reduce the goodput
+loss but can be expensive in runtime.
