@@ -1,0 +1,39 @@
+\section{Related Work}
+These considerations are extensions of the considerations made in the original Mesos paper and
+focus primarily on the impact of revocation. Please refer to [1] for discussion of how basic
+Mesos compare other cluster managament solutions.
+
+\textbf{HPC and Grid Schedulers.} These systems generally do not do any form of unscheduled
+revocation. Jobs submitted are run until finished or killed after a defined timeout period.
+If resources are not available to execute a job then the job is placed into a queue and forced
+to wait until it reaches the head of the queue and enough resources are available. This can
+lead to significant unpredictable latency for jobs that is highly dependent on system load.
+Priority in the system for jobs can only affect whether jobs are able to skip past other,
+lower-priority jobs in the queue. Some HPC systems will reserve nodes for jobs that are
+interactive or high-priority but this is inefficient when there are not enough high priority
+jobs are running in the system to use all the reserved slots.
+
+\textbf{Clouds.} Features of virtual machines provide convenient alternatives to direct
+revocation. Virtual machines instead may be suspended, saved, and re-executed later during when
+the system is less overloaded or moved to less congested parts of the cluster, in theory. Even
+so, the overhead of launching and destroying virtual machines would make users less reluctant
+to actually spin off work to . Also, in practice, clusters such as AMazon EC2 are not
+instrumented to know certain instances are speculative, instead being forced to treat them all
+equally.  would rely on the client to detect the congestion itself and suspend its own
+speculative instances. Thus, most responsibility falls to the client to police its own tasks
+and suspend speculative instances during times of congestion (which may be hard to detect at
+the client level). Undersubscribed frameworks running in congested parts of the system are
+simply forced to deal with the corresponding performance penalty.
+
+\textbf{Quincy.} Quincy is designed specifically for running MapReduce-like tasks. This
+constrained set of applications allows the system to make more assumptions on framework
+behavior than Mesos is capable of making. Since the Quincy cluster manager knows directly which
+tasks are speculative, that jobs are highly resilient to task loss, and if jobs are willing to
+accept new resources, much better revocation decisions can be made and thus Quincy does use
+task preemption to enforce fairness in general. Unfortunately, not all frameworks run on Mesos
+follow the model of computation assumed by Quincy thus restricting the applicability of these
+solutions.
+
+\textbf{Condor.} Now known as HTCondor, this system is basically an extension of the batch
+schedulers used in HPC and grids. Thus, like those systems, Condor cannot provide strong
+latency guarantees.

@@ -17,9 +17,15 @@ Undersubscribed frameworks are able to get a resonable slice of the system witho
 out the system by greedy frameworks.
 
 In this paper we chose the simplest resource revocation scheme. To continue this project, we would
-examine different revocation policies. One possible idea would be to change the frequency of
-revocations (currently we revoke at every Mesos heartbeat). Reducing the frequency would obviously
-increase task latency but could also possibly reduce goodput loss. Another possible extension would be
-to improve our revocation algorithm. Currently, we are not selective about who we revoke from and how
-much we revoke from each framework. A smarter revocation algorithm could possibly reduce the goodput
-loss but can be expensive in runtime.
+examine different revocation policies. One possible idea would be to reduce the frequency of revocations
+(since currently we check for revokation at every Mesos heartbeat). Reducing the frequency would
+obviously increase task latency but could also possibly reduce goodput loss by preventing Mesos from
+overreacting to transient utilization spikes. Other possible extensions explore broad adjustments to the
+revocation algorithm. Currently, the revocation routine iterates through oversubscribed rameworks in an
+arbitrary order until all resource needs are satisfied. A possible alternative would be to only revoke a
+handful of tasks every cycle and focus specifically on the most oversubscribed framework. This would
+possibly spread out the goodput impact amongst multiple oversubscribed frameworks providing a fairer
+punishment for oversubscription at the expense of taking more time to fulfill all needs. Also, before
+Mesos directly revokes tasks, the master allocator could first send a warning message to oversubscribed
+frameworks giving them a chance to voluntarily terminate excess tasks (allowing those frameworks to pick
+a better termination order than youngest first) before Mesos initiated revocation.
