@@ -4,13 +4,12 @@
 \input{150-goodput-latency}
 \input{30-goodput-latency}
 \subsection{Experimental Setup}
-Unfortunately, we did not have access to a large cluster to run Mesos on. We instead ran our
-experimentation on 8-core 2.67 GHz Intel Xeon processor with 49 GB of usable memory. In all of our
-experiments, we used 1 instance of a Mesos Master managing 1 Slave in charge of a 8 slot ``cluster''.
+We ran our experimentation on 8-core 2.67 GHz Intel Xeon processor with 49 GB of usable memory. In all of
+our experiments, we used 1 instance of a Mesos Master managing 1 Slave in charge of a 8 slot ``cluster''.
 Due to compute resource limitations, the experimental setup is not meant to be representative of a real
-Mesos cluster. However, since we designed our synthetic frameworks to highlight specific problem 
-scenarios in a Mesos cluster and not for big-picture catch-all experiments, the experimental results
-are still highly beneficial.
+Mesos cluster. However, since we designed our synthetic frameworks to highlight specific problem
+scenarios in a Mesos cluster and not for big-picture catch-all experiments, the experimental results are
+still highly beneficial.
 
 In our experiments, we define goodput to be the amount of time that a framework was able to use a
 resource slot to make progress that is eventually saved. For example, if a task occupies a slot for
