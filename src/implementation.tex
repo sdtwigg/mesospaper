@@ -1,4 +1,6 @@
 \section{Implementation}
+\input{communication}
+
 In this paper, we contribute two types of revocation mechanisms to Mesos: offer revocation and resource
 revocation. The idea behind offer revocation is that Mesos will give frameworks adequate time to respond
 to an offer it has made. If a framework fails to respond in time, Mesos will forcibly take back the
@@ -30,7 +32,8 @@ fails to respond to resource offer before the timer goes off, we gradually incre
 up to a maximum. 
 
 \subsection{Resource Revocation}
-Resource revocation is much more complicted. At every heartbeat, stock Mesos will perform DRF to
+Resource revocation is much more complicted. Figure~\ref{fig:communication} shows the new
+communication paths that we added to Mesos. At every heartbeat, stock Mesos will perform DRF to
 determine which framework to make a resource offer to. We modified Mesos to also check the resource
 utlizations of all the frameworks at every heartbeat. Mesos will calculate the amount of resources that
 are allocatable ($R_a$), the amount of resources by which each framework is over its guaranteed
