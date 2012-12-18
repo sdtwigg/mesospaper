@@ -1,6 +1,5 @@
 \section{Introduction and Motivation}
 \label{sec:intro}
-
 \input{revocation}
 
 As the data analytics and processing needs of companies grow, systems designers are looking
@@ -19,26 +18,27 @@ point to monitor the status and utilization of all agents in the system.
 
 \subsection{Apache Mesos}
 Apache Mesos is one such cluster manager that was originally developed by the UC Berkeley AMP
-Lab and is currently in use to manage clusters at Twitter and Conviva [1,2 REF]. Mesos uses an
-event-driven architecture and is written in C++ and built on top of the Libprocess and
-Zookeeper libraries. This paper will explain enough of the Mesos architecture to understand the
-change implemented in the project; however, please refer to the original paper [1] for the
-particular details on other parts of the system. The Mesos API model does not require
-frameworks to specify the fine details of what resources the participating frameworks (the
-clients) need.  Rather, Mesos compiles a listing of available resources at nodes into an offer
-that it then presents to a framework. The framework may then analyze the resources in the offer
-and then cherry-pick the specific nodes onto which Mesos should launch new tasks for the
-framework. This allows frameworks to fulfill arbitrarily complex resource allocation
-requirements without complicating the Mesos scheduler. For example, by tracking its previous
-allocations, frameworks could ensure its tasks are all located on the same rack in the system
-(for better IPC speed) or far away from each other (for better resiliency to failure), only
-launched on nodes with internet access (for webservers), or, for Hadoop-like tasks,
-preferentially launched on nodes already containing the data to be processed (to minimize data
-fetch time). To enforce fairness amongst all frameworks, the allocator in Mesos implements
-dominant resource fairness [3 REF] and only makes new offers to frameworks in order of
-increasing dominant share. Over time, this is expected to balance out the system amongst all
-frameworks. Mesos has been found to be highly scalable (up to 50000 nodes) and competitive when
-run against static partitioning for various Hadoop and Spark workloads.
+Lab and is currently in use to manage clusters at Twitter and Conviva \cite{mesos-paper,
+mesos-website}. Mesos uses an event-driven architecture and is written in C++ and built on top
+of the Libprocess and Zookeeper libraries. This paper will explain enough of the Mesos
+architecture to understand the change implemented in the project; however, please refer to the
+original paper \cite{mesos-paper} for the particular details on other parts of the system. The
+Mesos API model does not require frameworks to specify the fine details of what resources the
+participating frameworks (the clients) need.  Rather, Mesos compiles a listing of available
+resources at nodes into an offer that it then presents to a framework. The framework may then
+analyze the resources in the offer and then cherry-pick the specific nodes onto which Mesos
+should launch new tasks for the framework. This allows frameworks to fulfill arbitrarily
+complex resource allocation requirements without complicating the Mesos scheduler. For example,
+by tracking its previous allocations, frameworks could ensure its tasks are all located on the
+same rack in the system (for better IPC speed) or far away from each other (for better
+resiliency to failure), only launched on nodes with internet access (for webservers), or, for
+Hadoop-like tasks, preferentially launched on nodes already containing the data to be processed
+(to minimize data fetch time). To enforce fairness amongst all frameworks, the allocator in
+Mesos implements dominant resource fairness \cite{drf-paper} and only makes new offers to
+frameworks in order of increasing dominant share. Over time, this is expected to balance out
+the system amongst all frameworks. Mesos has been found to be highly scalable (up to 50000
+nodes) and competitive when run against static partitioning for various Hadoop and Spark
+workloads.
 
 \subsection{Fairness Problems with Mesos}
 Producing fairness by ordering offers to frameworks, unfortunately, does not work in the
@@ -53,7 +53,10 @@ interest), all system resources will be reserved for extended periods of time le
 frameworks (or equivalently, other frameworks that suddenly need a bunch of resources to
 respond to a workload burst) unable to get resources in a timely manner. These high latencies
 may be unacceptable for interactive frameworks that must launch tasks immediately to respond to
-user queries.
+user queries. An example of offer timings unfarily impacting task latencies between frameworks
+is illustrated in Figure~\ref{fig:wo-revocation}. In that example, even though both frameworks
+enter the system at roughly the same time, the first framework received an offer first thus
+allowing it to grab all remaining resources and completely starve the second framework. 
 
 Implementation details of Mesos also reveal other, more subtle fairness issues that are not
 properly resolved by the basic offer model. The resource allocator in Mesos takes a snapshot of
@@ -77,7 +80,7 @@ a framework crash. Alternatively, greedy frameworks may have just been designed 
 up large portions of an offer with speculative work under the assumption that the large offer
 means the system is unloaded and thus the resources would just to waste otherwise. Thus, even
 for completely closed deployments of Mesos, resolving these issues will lead to a more stable
-overall design. 
+system overall. 
 
 \section{Proposed Solution}
 Acknowledging that a core problem with the offer-based fairness solution of Mesos starts
@@ -104,15 +107,17 @@ demands. The Mesos allocator tracks these demands and periodically checks to ens
 frameworks have their demand or, altarnatively, enough free resources exist in the system to
 cover the needs. If not, Mesos starts revoking tasks from frameworks using resources over their
 defined need. In order to minimize goodput loss, Mesos revokes tasks from a framework starting
-with the most recently launched task. Frameworks are permitted to adjust their needs over time
-(for example, interactive frameworks may relinquish demands for resources when no user queries
-are pending) and the system is designed to respond quickly to these changes. MPI-like
-frameworks that prefer not to lose tasks can thus insulate themselves from revocation by always
-keeping their task resource below their posted resource needs whereas MapReduce-like frameworks
-are still able to speculative execute but with the understanding this leaves them open to
-revocation and thus higher task-loss rates. The previous issue of frameworks tying up resources
-by not responding to offers was resolved by revoking offers from frameworks after an
-exponentially expanding timeout period.
+with the most recently launched task. As demonstrated in Figure~\ref{fig:w-revocation} this
+prevents the subtle timing of offers to frameworks or framework entry in the system from
+unacceptably impacting the latency until a framework receives usable resources. Frameworks are
+permitted to adjust their needs over time (for example, interactive frameworks may relinquish
+demands for resources when no user queries are pending) and the system is designed to respond
+quickly to these changes. MPI-like frameworks that prefer not to lose tasks can thus insulate
+themselves from revocation by always keeping their task resource below their posted resource
+needs whereas MapReduce-like frameworks are still able to speculative execute but with the
+understanding this leaves them open to revocation and thus higher task-loss rates. The previous
+issue of frameworks tying up resources by not responding to offers was resolved by revoking
+offers from frameworks after an exponentially expanding timeout period.
 
 Using resource revocation to only satisfy needs and not balance the system reflects the
 observation that offer-based DRF was working to balance the system in general only failing due
