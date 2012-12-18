@@ -1,0 +1,17 @@
+\section{Conclusion and Future Work}
+We have introduced offer and resource revocation in order to improve fairness when using Apache Mesos
+to manage clusters. Deploying offer revocation to timeout excessively indecisive frameworks permits the
+system to recover otherwise wasted resources and provide more offers to more frameworks. We implemented
+resource revocation to allow frameworks to obtain more reliable guarantees of system resources. This
+extension allows frameworks to put hard limits on task latencies and thus be able to fulfill SLAs. We
+found that since offer based DRF in Mesos already did a reasonable job in providing fairness of
+resources, it was sufficient to focus revocation on fulfilling needs and not desires of frameworks. This
+ultimately minimized goodput loss due to revocation.
+
+We evaluated our revocation mechanisms on a small cluster using synthetic frameworks designed to model
+problem scenarios that arise in a production cluster. Our results show that our revocation strategy
+works well to ensure fairness by minimizing task latencies at the cost of minimal goodput loss. Resource
+revocation was also able to maintain better resource stability and consistencies to participating
+frameworks. Greedy frameworks were prevented from locking out undersubscribed frameworks.
+Undersubscribed frameworks are able to get a resonable slice of the system without fear of being edged
+out the system by greedy frameworks.
