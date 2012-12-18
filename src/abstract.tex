@@ -9,7 +9,7 @@ and then use these constraints to guide Mesos in revoking resources.  This
 solution both minimizes work lost from revocation and leverages the
 pre-existing DRF algorithm in Mesos to already provide long-term fairness.
 Offer revocation after a timeout was employed to minimize resource waste due to
-indecisive frameworks. These adjusments were evaluated on a single machine
+indecisive frameworks. These adjustments were evaluated on a single machine
 using synthetic benchmarks designed to simulate problem scenarios that occur
 when running Mesos in production on large 1000+ node clusters. Evalutation
 demonstrated frameworks running latency sensitive tasks were able to start new
