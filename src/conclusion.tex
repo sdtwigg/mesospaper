@@ -1,4 +1,4 @@
-\section{Conclusion and Future Work}
+\section{Conclusions}
 We have introduced offer and resource revocation in order to improve fairness when using Apache Mesos
 to manage clusters. Deploying offer revocation to timeout excessively indecisive frameworks permits the
 system to recover otherwise wasted resources and provide more offers to more frameworks. We implemented
@@ -16,6 +16,7 @@ frameworks. Greedy frameworks were prevented from locking out undersubscribed fr
 Undersubscribed frameworks are able to get a resonable slice of the system without fear of being edged
 out the system by greedy frameworks.
 
+\section{Future Work}
 In this paper we chose the simplest resource revocation scheme. To continue this project, we would
 examine different revocation policies. One possible idea would be to reduce the frequency of revocations
 (since currently we check for revokation at every Mesos heartbeat). Reducing the frequency would
@@ -25,7 +26,18 @@ revocation algorithm. Currently, the revocation routine iterates through oversub
 arbitrary order until all resource needs are satisfied. A possible alternative would be to only revoke a
 handful of tasks every cycle and focus specifically on the most oversubscribed framework. This would
 possibly spread out the goodput impact amongst multiple oversubscribed frameworks providing a fairer
-punishment for oversubscription at the expense of taking more time to fulfill all needs. Also, before
-Mesos directly revokes tasks, the master allocator could first send a warning message to oversubscribed
-frameworks giving them a chance to voluntarily terminate excess tasks (allowing those frameworks to pick
-a better termination order than youngest first) before Mesos initiated revocation.
+punishment for oversubscription at the expense of taking more time to fulfill all needs.
+
+Adding a voluntary revocation stage before forcing Mesos to directly revoke tasks would also be
+beneficial. Here, the master allocator would first send a warning message to oversubscribed frameworks
+giving them a chance to voluntarily terminate excess tasks (allowing those frameworks to pick a better
+termination order than youngest first) before Mesos initiated revocation. Since not all frameworks are
+like to respond (for example, legacy frameworks not updated to the new Mesos communication model), there
+is some design space in deciding how many extra resources Mesos should ask frameworks to voluntarily
+surrender.
+
+\section{Acknowledgements}
+Special thanks to Benjamin Hindman and the other Mesos developers at UC Berkeley for providing support in
+understanding the Mesos codebase and discussing possible implementation details for resource revocation.
+Thank you to Professors Anthony Joseph and John Kubiatowicz for providing feedback on the project
+progress and contributing general implementation ideas.

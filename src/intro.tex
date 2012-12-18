@@ -89,7 +89,8 @@ means the system is unloaded and thus the resources would just to waste otherwis
 for completely closed deployments of Mesos, resolving these issues will lead to a more stable
 system overall. 
 
-\section{Proposed Solution}
+\section{Methodology}
+\subsection{Proposed Solution}
 Acknowledging that a core problem with the offer-based fairness solution of Mesos starts
 breaking down as the system fills and no resources are available, the clear solution is to
 simply revoke resources from `oversubscribed' frameworks in order to make resources available.
@@ -114,17 +115,19 @@ demands. The Mesos allocator tracks these demands and periodically checks to ens
 frameworks have their demand or, altarnatively, enough free resources exist in the system to
 cover the needs. If not, Mesos starts revoking tasks from frameworks using resources over their
 defined need. In order to minimize goodput loss, Mesos revokes tasks from a framework starting
-with the most recently launched task. As demonstrated in Figure~\ref{fig:w-revocation} this
-prevents the subtle timing of offers to frameworks or framework entry in the system from
-unacceptably impacting the latency until a framework receives usable resources. Frameworks are
-permitted to adjust their needs over time (for example, interactive frameworks may relinquish
-demands for resources when no user queries are pending) and the system is designed to respond
-quickly to these changes. MPI-like frameworks that prefer not to lose tasks can thus insulate
-themselves from revocation by always keeping their task resource below their posted resource
-needs whereas MapReduce-like frameworks are still able to speculative execute but with the
-understanding this leaves them open to revocation and thus higher task-loss rates. The previous
-issue of frameworks tying up resources by not responding to offers was resolved by revoking
-offers from frameworks after an exponentially expanding timeout period.
+with the most recently launched task.
+
+As demonstrated in Figure~\ref{fig:w-revocation} this prevents the subtle timing of offers to
+frameworks or framework entry in the system from unacceptably impacting the latency until a
+framework receives usable resources. Frameworks are permitted to adjust their needs over time
+(for example, interactive frameworks may relinquish demands for resources when no user queries
+are pending) and the system is designed to respond quickly to these changes. MPI-like
+frameworks that prefer not to lose tasks can thus insulate themselves from revocation by always
+keeping their task resource below their posted resource needs whereas MapReduce-like frameworks
+are still able to speculative execute but with the understanding this leaves them open to
+revocation and thus higher task-loss rates. The previous issue of frameworks tying up resources
+by not responding to offers was resolved by revoking offers from frameworks after an
+exponentially expanding timeout period.
 
 Using resource revocation to only satisfy needs and not balance the system reflects the
 observation that offer-based DRF was working to balance the system in general only failing due
@@ -133,11 +136,43 @@ determining if a resource-light framework would even use resources revoked from 
 framework. Whereas offer responses are very specific by detailing precisely which nodes to use
 resources on, need requests are by design kept general specifying only quantity of a resource
 type needed but not location. This allows Mesos administrators to more easily ensure all needs
-for their system are actually satisfiable. Alternative solutions where Mesos submits `tentative
-offers' of the whole system to frameworks and then used that response to drive revocation
-decisions lead to hard-to-resolve conflicts. For example, a framework would then reply it needs
-a resource on a specific node which Mesos then must revoke to provide whereas that request may
-have been satisfiable on a different node requiring a less-painful revocation. More nuanced
-responses with alternatives could be made but this rapidly complicates the design of Mesos'
-simple offer model.
+for their system are actually satisfiable. Finally, this solution is completely backwards
+compatible with frameworks designed to use the older communication model. If no frameworks ever
+submit a resource need request then the revocation subsystem will never turn on. If only a
+handful of frameworks submit requests, those that did not are still able to run but just more
+susceptible to being revoked. As a bonus, this provides an incentive (but not mandate) for
+framework maintainers to keep their code up to date.
+
+\subsection{Rejected Solutions}
+An alternative solution would have Mesos submit `tenative offers' that include currently used
+resources to frameworks with low dominant shares. Resources in these offers would be specially
+marked to allow frameworks to show some restraint in asking for currently utilized resources
+otherwise a greedy framework doing speculation may immediately ask for everything causing a
+large amount of revocation and corresponding work loss.  Already, this solution is less
+appealing as it requires frameworks to consider impact on other frameworks when responding to
+these tentaive offers. By comparison, the proposed solution only asks frameworks to construct
+messages about their own needs. Mesos is then able to use its global view of the system and
+framework resource needs to make reasoned decisions on who to revoke.
+
+This solution also leads hard-to-resolve resource conflicts and possibly thrashing. If the tentative
+offers are too small including only resources from the frameworks with large dominant shares,
+they may not contain enough resources that the offer recipient is able to use the offer. If the
+tentative offers are too large, the receiving framework may ask for resources used by a only
+somewhat large framework when it would have been just as satisfied taking resources from the
+most dominant framework, a clearly more ideal case. Attempts to annotate the offer response
+wherein the responding framework includes a listing of alternatives would rapidly complicate
+the communication model(and is likely to cause some frameworks to require even more time to
+respond to offers). In either case, this could lead to thrashing as the more dominant
+frameworks are forced to shrink down in size and then become eligible to receive tentative
+offers as well. Guaranteed shares could be used to avoid this situation but at that point
+becomes barely indistinguishable from the proposed solution.
+
+For similar reasons, allowing frameworks to, in general without an offer, explicitely ask for
+resources on a specific node is not supported in order to prevent two frameworks from
+constantly thrashing over that specific resource. This may be resolvable as an extension to the
+proposed guaranteed-based solution. Revocation would only occur if the framework holding the
+resource is actually oversubscribed with the understanding that, since the framework is still
+above its guarantee, it can still make some forward progress. Due to time constraints and
+challenges constructed good test cases, actual implementation and testing of this solution is
+reserved for future work.
 
