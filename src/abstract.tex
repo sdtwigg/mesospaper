@@ -1,0 +1,22 @@
+\section{Abstract}
+\textit{
+Apache Mesos is a cluster manager that uses the dominant resource fairness algorithm in an
+attemt to fairly distribute resources amongst participating frameworks. Unfortunately, while
+the resource offer based model works well for the MapReduce-like tasks the system was initially
+designed for, Mesos cannot reliable provide good latency and fairness guarantees when run on
+systems with more general workloads. This paper explored the use of resource revocation wherein
+Mesos intentionally terminates tasks of oversubscribed frameworks to free up resources in order
+to provide these more reliable latency guarantees. A simple extension of the communication
+model allowing frameworks to state minimum resource needs in order to guide Mesos in making
+reasonably conservative revocation decisions. This granted Mesos the ability to make these
+stronger guarantees while minimizing the amount of work lost and corresponding resource waste
+due to revocation. Adjustments to the offer model were also made to prevent frameworks from
+typing up resources by failing to respond to offers in a timely manner by forcing offers to
+timeout. Changes were evaluated on a small 8 core cluster using synthetic benchmarks
+designed to simulate problem scenarios that occur when running Mesos in production on large
+1000+ node clusters. Evalutation demonstrated frameworks running latency sensitive tasks were able to
+start new jobs on a fully-utilized Mesos cluster emplyoing revocation as if they were the only
+framework in the system. The offer revocation changes allowed Mesos to make more offers to more
+frameworks even in the presence of indecisive clients. These offer model changes were, as
+desired, found to not have an effect on systems with well-behaved decisive frameworks.
+}
